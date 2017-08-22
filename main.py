@@ -29,7 +29,9 @@ def handle_new_member(msg):
 
 @bot.message_handler(regexp=r"^(\/novo [\w ]{1,43}) ([0-9]+\/[0-9]+\/[0-9]+) ([0-9]+\:[0-9]+)$")
 def handle_new_events(msg):
-   
+    if not is_admin(msg.chat.id, msg.from_user.id):
+        return bot.send_message(msg.chat.id, "Você ainda não pode mudar a Matrix.")
+    
     arguments = util.extract_arguments(msg.text).split() # type: list
     title = arguments[:-2] 
     title = ' '.join(title) # type: str
@@ -48,6 +50,10 @@ def handle_new_events(msg):
     else:
         bot.send_message(msg.chat.id, "Tente no formato 'titulo DD/MM/YYYY HH:MM'")
         
+def is_admin(chat_id, user_id):
+    user = bot.get_chat_member(chat_id, user_id)
+    return True if user.status in "creator administrator" else False
+    
 def format_datetime(arg):
     if not arg: return
     try:
@@ -56,19 +62,16 @@ def format_datetime(arg):
     except ValueError:
         return
 
+
 @bot.message_handler(commands=['eventos', 'Eventos'])
 def show_events(msg):
-    events = buscar_eventos_grupo(msg.chat.id) # type: tuple
+    events = buscar_eventos_grupo(msg.chat.id) # type: List[tuple]
     all_events = ''
     for title, timestamp in events:
         day = datetime.fromtimestamp(timestamp).strftime("%d/%m/%Y %H:%M")
         all_events += "{} {}\n".format(title, day)
     bot.send_message(msg.chat.id, all_events)
 
-
-@bot.message_handler(commands=['meuseventos'])
-def show_user_events(msg):
-    pass
 
 
 if __name__ == "__main__":
